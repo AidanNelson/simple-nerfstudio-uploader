@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
     socket.on('subscribe', (data) => {
         console.log(`Subscribing to ${data.filePath}`);
         projectStatusSubscriptions[socket.id] = data.filePath;
-    }
+    });
 
 });
 
