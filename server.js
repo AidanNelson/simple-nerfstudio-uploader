@@ -25,6 +25,7 @@ let projectStatusSubscriptions = {};
 let projectStatus = {};
 
 const updateProjectSubscriptions = (fileName) => {
+    if (!projectStatus[fileName])  return;
     projectStatus[fileName] += data;
     if (projectStatusSubscriptions[fileName]) {
         for (let socket of projectStatusSubscriptions[fileName]) {
@@ -89,13 +90,20 @@ function processUploadedVideoFile(filePath) {
 
     let nsProcessDataProcess = exec(cmd, (error, stdout, stderr) => {
         if (error) {
+            projectStatus[path.basename(filePath)] += error.message;
             console.error(`Error executing ns-process-data: ${error.message}`);
             return;
         }
         if (stderr) {
+            projectStatus[path.basename(filePath)] += stderr;
+
             console.error(`ns-process-data stderr: ${stderr}`);
             return;
         }
+
+        projectStatus[path.basename(filePath)] += stdout;
+        updateProjectSubscriptions(path.basename(filePath));
+
         console.log(`ns-process-data output: ${stdout}`);
     });
 
@@ -123,14 +131,12 @@ function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
             console.error(`Error executing ns-train: ${error.message}`);
             projectStatus[path.basename(filePath)] += error.message;
 
-            updateProjectSubscriptions(path.basename(filePath));
             return;
         }
         if (stderr) {
             console.error(`ns-train stderr: ${stderr}`);
             projectStatus[path.basename(filePath)] += stderr;
 
-            updateProjectSubscriptions(path.basename(filePath));
             return;
         }
         console.log(`ns-train output: ${stdout}`);
