@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+    <script src="/socket.io/socket.io.js"></script>
+
+
+</head>
+
+<body>
+    <h1>Upload Files</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="files" multiple>
+        <button type="submit">Upload</button>
+    </form>
+    <div id="status"></div>
+
+
+    <script>
+        let socket = io();
+
+        socket.on('statusUpdate', function (data) {
+            const statusMessage = document.getElementById('status');
+            statusMessage.textContent += data + "\n";
+        });
+        document.getElementById('uploadForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const file = document.getElementById('fileInput').files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const statusMessage = document.getElementById('status');
+                if (response.ok) {
+                    socket.emit('subscribe', { filePath: file.name })
+                    statusMessage.textContent = 'Files uploaded successfully!';
+                } else {
+                    statusMessage.textContent = 'Failed to upload files.';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while uploading files.');
+            }
+        });
+    </script>
+
+</body>
+
+</html>

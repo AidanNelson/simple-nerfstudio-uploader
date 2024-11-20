@@ -1,0 +1,16 @@
+{
+  "name": "simple-nerfstudio-uploader",
+  "version": "1.0.0",
+  "description": "Quick way to upload videos for processing into splatfacto models for use in class setting.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "socket.io": "^4.8.1"
+  }
+}
