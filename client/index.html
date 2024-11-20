@@ -55,7 +55,9 @@
                 const statusMessage = document.getElementById('status');
                 if (response.ok) {
                     let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
-                    subscriptions.push(file.name);
+                    if (!subscriptions.includes(file.name)){
+                        subscriptions.push(file.name);
+                    }
                     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
                     socket.emit('subscribe', { filePath: file.name })
                 } else {

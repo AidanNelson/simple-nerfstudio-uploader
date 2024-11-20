@@ -26,7 +26,6 @@ let projectStatus = {};
 
 const updateProjectSubscriptions = (fileName) => {
     if (!projectStatus[fileName])  return;
-    projectStatus[fileName] += data;
     if (projectStatusSubscriptions[fileName]) {
         for (let socket of projectStatusSubscriptions[fileName]) {
             socket.emit('statusUpdate', projectStatus[fileName]);
@@ -65,8 +64,8 @@ const upload = multer({ storage: storage });
 app.post('/upload', upload.single('file'), (req, res) => {
     res.send('File uploaded successfully');
     console.log('File uploaded, starting to process data w/ nerfstudio');
-    projectStatus[req.file.path] = '';
-    projectStatus[req.file.path] += 'File uploaded succesfully! \n Beginning ns-process-data...';
+    projectStatus[req.file.path] = "";
+    projectStatus[req.file.path] += "File uploaded succesfully! Beginning ns-process-data...";
     processUploadedVideoFile(req.file.path);
 });
 
@@ -88,7 +87,7 @@ function processUploadedVideoFile(filePath) {
     cmd += ` --output-dir ${processedDir}`;
 
 
-    let nsProcessDataProcess = exec(cmd, (error, stdout, stderr) => {
+    let nsProcessDataProcess = exec(cmd, {maxBuffer: 1024 * 1024 * 8}, (error, stdout, stderr) => {
         if (error) {
             projectStatus[path.basename(filePath)] += error.message;
             console.error(`Error executing ns-process-data: ${error.message}`);
@@ -100,7 +99,7 @@ function processUploadedVideoFile(filePath) {
             console.error(`ns-process-data stderr: ${stderr}`);
             return;
         }
-
+        
         projectStatus[path.basename(filePath)] += stdout;
         updateProjectSubscriptions(path.basename(filePath));
 
