@@ -29,7 +29,10 @@ io.on("connection", (socket) => {
 
     socket.on('subscribe', (data) => {
         console.log(`Subscribing to ${data.filePath}`);
-        projectStatusSubscriptions[socket.id] = data.filePath;
+        if (!projectStatusSubscriptions[data.filePath]) {
+            projectStatusSubscriptions[data.filePath] = [];
+        }
+        projectStatusSubscriptions[data.filePath].push(socket);
     });
 
 });
@@ -84,21 +87,21 @@ function processUploadedVideoFile(filePath) {
     });
 
     nsProcessDataProcess.stdout.on('data', (data) => {
-        console.log(`ns-train stdout: ${data}`);
-        for (let id in projectStatusSubscriptions) {
-            if (projectStatusSubscriptions[id] === filePath) {
-                io.to(id).emit('statusUpdate', data);
+        console.log(`ns-process-data stdout: ${data}`);
+        if (projectStatusSubscriptions[filePath]) {
+            for (let socket of projectStatusSubscriptions[filePath]) {
+                socket.emit('statusUpdate', data);
             }
-        }
+        } 
     });
 
     nsProcessDataProcess.on('close', (code) => {
         console.log(`ns-process-data process exited with code ${code}`);
-        trainSplatfactoModel(processedDir, outputDir);
+        trainSplatfactoModel(filePath, processedDir, outputDir);
     })
 }
 
-function trainSplatfactoModel(processedDir, outputDirPath) {
+function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
 
     let cmd = `ns-train splatfacto --data ${processedDir}`;
     cmd += ` --output-dir ${outputDirPath}`;
@@ -117,11 +120,11 @@ function trainSplatfactoModel(processedDir, outputDirPath) {
 
     nsTrainProcess.stdout.on('data', (data) => {
         console.log(`ns-train stdout: ${data}`);
-        for (let id in projectStatusSubscriptions) {
-            if (projectStatusSubscriptions[id] === filePath) {
-                io.to(id).emit('statusUpdate', data);
+        if (projectStatusSubscriptions[filePath]) {
+            for (let socket of projectStatusSubscriptions[filePath]) {
+                socket.emit('statusUpdate', data);
             }
-        }
+        } 
     });
 
     nsTrainProcess.on('close', (code) => {
