@@ -34,7 +34,7 @@ io.on("connection", (socket) => {
             projectStatusSubscriptions[data.filePath] = [];
         }
         projectStatusSubscriptions[data.filePath].push(socket);
-        console.log(projectStatusSubscriptions);
+        socket.emit('statusUpdate', projectStatus[data.filePath]);
     });
 
 });
