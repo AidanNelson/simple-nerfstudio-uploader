@@ -11,7 +11,8 @@
 
 <body>
     <h1>Gaussian Splat Generator</h1>
-    <span>Upload a video to generate a Gaussian Splat using Nerfstudio on the <a href="http://itp-ml.itp.tsoa.nyu.edu">ITP ML Computer</a></span>
+    <span>Upload a video to generate a Gaussian Splat using Nerfstudio on the <a
+            href="http://itp-ml.itp.tsoa.nyu.edu">ITP ML Computer</a></span>
     <br /><br />
     <strong>NOTE: this process is quite slow... up to 3 hours or more... </strong>
     <br /><br />
@@ -23,10 +24,12 @@
     </form>
     <hr />
     <h2>Status:</h2>
+    <a id="viewer-link" target="_blank" rel="noreferrer">View the Gaussian Splat Live</a>
     <div id="status" style="white-space: pre-wrap;"></div>
 
 
     <script>
+        let viserUrl = null;
         let socket = io();
 
         let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
@@ -38,7 +41,15 @@
             console.log('got status update:', data);
             const statusMessage = document.getElementById('status');
             statusMessage.textContent = data;
-
+            if (!viserUrl) {
+                let originalUrls = data.match(/http:\/\/[^\s]+/);
+                if (originalUrls[0]) {
+                    const url = originalUrls[0].replace("0.0.0.0", "itp-ml-itp.tsoa.nyu.edu");
+                    const link = document.getElementById('viewer-link');
+                    link.href = url;
+                    viserUrl = url;
+                }
+            }
         });
         document.getElementById('uploadForm').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -55,7 +66,7 @@
                 const statusMessage = document.getElementById('status');
                 if (response.ok) {
                     let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
-                    if (!subscriptions.includes(file.name)){
+                    if (!subscriptions.includes(file.name)) {
                         subscriptions.push(file.name);
                     }
                     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
