@@ -28,11 +28,12 @@ io.on("connection", (socket) => {
     console.log("New socket connected!");
 
     socket.on('subscribe', (data) => {
-        console.log(`Subscribing to ${data.filePath}`);
+        console.log(`${socket.id} is subscribing to ${data.filePath}`);
         if (!projectStatusSubscriptions[data.filePath]) {
             projectStatusSubscriptions[data.filePath] = [];
         }
         projectStatusSubscriptions[data.filePath].push(socket);
+        console.log(projectStatusSubscriptions);
     });
 
 });
@@ -88,9 +89,11 @@ function processUploadedVideoFile(filePath) {
 
     nsProcessDataProcess.stdout.on('data', (data) => {
         console.log(`ns-process-data stdout: ${data}`);
-        if (projectStatusSubscriptions[filePath]) {
-            for (let socket of projectStatusSubscriptions[filePath]) {
-                socket.emit('statusUpdate', data);
+
+        if (projectStatusSubscriptions[path.basename(filePath)]) {
+   
+            for (let sock of projectStatusSubscriptions[path.basename(filePath)]) {
+                sock.emit('statusUpdate', data);
             }
         } 
     });

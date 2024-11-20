@@ -15,11 +15,16 @@
         <input type="file" id="fileInput" name="files" multiple>
         <button type="submit">Upload</button>
     </form>
-    <div id="status"></div>
+    <div id="status" style="white-space: pre-wrap;"></div>
 
 
     <script>
         let socket = io();
+
+        let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+        subscriptions.forEach(filePath => {
+            socket.emit('subscribe', { filePath: filePath });
+        });
 
         socket.on('statusUpdate', function (data) {
             console.log('got status update:', data);
@@ -40,6 +45,9 @@
 
                 const statusMessage = document.getElementById('status');
                 if (response.ok) {
+                    let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+                    subscriptions.push(file.name);
+                    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
                     socket.emit('subscribe', { filePath: file.name })
                     statusMessage.textContent = 'Files uploaded successfully!';
                 } else {
