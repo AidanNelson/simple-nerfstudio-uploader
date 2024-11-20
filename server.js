@@ -120,6 +120,7 @@ function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
 
     nsTrainProcess.stdout.on('data', (data) => {
         console.log(`ns-train stdout: ${data}`);
+        console.log('project status subscriptions:', projectStatusSubscriptions);
         if (projectStatusSubscriptions[filePath]) {
             for (let socket of projectStatusSubscriptions[filePath]) {
                 socket.emit('statusUpdate', data);
