@@ -22,6 +22,7 @@ const server = app.listen(port, () => {
 const io = require("socket.io")().listen(server);
 
 let projectStatusSubscriptions = {};
+let projectStatus = {};
 
 // Set up each socket connection
 io.on("connection", (socket) => {
@@ -54,6 +55,8 @@ const upload = multer({ storage: storage });
 app.post('/upload', upload.single('file'), (req, res) => {
     res.send('File uploaded successfully');
     console.log('File uploaded, starting to process data w/ nerfstudio');
+    projectStatus[req.file.path] = '';
+    projectStatus[req.file.path] += 'File uploaded succesfully! \n Beginning ns-process-data...';
     processUploadedVideoFile(req.file.path);
 });
 
@@ -89,11 +92,11 @@ function processUploadedVideoFile(filePath) {
 
     nsProcessDataProcess.stdout.on('data', (data) => {
         console.log(`ns-process-data stdout: ${data}`);
-
+        projectStatus[path.basename(filePath)] += data;
         if (projectStatusSubscriptions[path.basename(filePath)]) {
    
             for (let sock of projectStatusSubscriptions[path.basename(filePath)]) {
-                sock.emit('statusUpdate', data);
+                sock.emit('statusUpdate',  projectStatus[path.basename(filePath)]);
             }
         } 
     });
@@ -123,10 +126,11 @@ function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
 
     nsTrainProcess.stdout.on('data', (data) => {
         console.log(`ns-train stdout: ${data}`);
-        console.log('project status subscriptions:', projectStatusSubscriptions);
-        if (projectStatusSubscriptions[filePath]) {
-            for (let socket of projectStatusSubscriptions[filePath]) {
-                socket.emit('statusUpdate', data);
+        projectStatus[path.basename(filePath)] += data;
+        if (projectStatusSubscriptions[path.basename(filePath)]) {
+   
+            for (let sock of projectStatusSubscriptions[path.basename(filePath)]) {
+                sock.emit('statusUpdate',  projectStatus[path.basename(filePath)]);
             }
         } 
     });

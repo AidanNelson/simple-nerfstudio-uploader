@@ -10,11 +10,19 @@
 </head>
 
 <body>
-    <h1>Upload Files</h1>
+    <h1>Gaussian Splat Generator</h1>
+    <span>Upload a video to generate a Gaussian Splat using Nerfstudio on the <a href="http://itp-ml.itp.tsoa.nyu.edu">ITP ML Computer</a></span>
+    <br /><br />
+    <strong>NOTE: this process is quite slow... up to 3 hours or more... </strong>
+    <br /><br />
+    <hr />
+
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" id="fileInput" name="files" multiple>
         <button type="submit">Upload</button>
     </form>
+    <hr />
+    <h2>Status:</h2>
     <div id="status" style="white-space: pre-wrap;"></div>
 
 
@@ -29,7 +37,8 @@
         socket.on('statusUpdate', function (data) {
             console.log('got status update:', data);
             const statusMessage = document.getElementById('status');
-            statusMessage.textContent += data + "\n";
+            statusMessage.textContent = data;
+
         });
         document.getElementById('uploadForm').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -49,7 +58,6 @@
                     subscriptions.push(file.name);
                     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
                     socket.emit('subscribe', { filePath: file.name })
-                    statusMessage.textContent = 'Files uploaded successfully!';
                 } else {
                     statusMessage.textContent = 'Failed to upload files.';
                 }
