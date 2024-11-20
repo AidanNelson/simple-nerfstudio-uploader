@@ -24,17 +24,26 @@ const io = require("socket.io")().listen(server);
 let projectStatusSubscriptions = {};
 let projectStatus = {};
 
+const updateProjectSubscriptions = (fileName) => {
+    projectStatus[fileName] += data;
+    if (projectStatusSubscriptions[fileName]) {
+        for (let socket of projectStatusSubscriptions[fileName]) {
+            socket.emit('statusUpdate', projectStatus[fileName]);
+        }
+    }
+}
 // Set up each socket connection
 io.on("connection", (socket) => {
     console.log("New socket connected!");
 
     socket.on('subscribe', (data) => {
         console.log(`${socket.id} is subscribing to ${data.filePath}`);
+
         if (!projectStatusSubscriptions[data.filePath]) {
             projectStatusSubscriptions[data.filePath] = [];
         }
         projectStatusSubscriptions[data.filePath].push(socket);
-        socket.emit('statusUpdate', projectStatus[data.filePath]);
+        updateProjectSubscriptions(data.filePath);
     });
 
 });
@@ -93,12 +102,9 @@ function processUploadedVideoFile(filePath) {
     nsProcessDataProcess.stdout.on('data', (data) => {
         console.log(`ns-process-data stdout: ${data}`);
         projectStatus[path.basename(filePath)] += data;
-        if (projectStatusSubscriptions[path.basename(filePath)]) {
-   
-            for (let sock of projectStatusSubscriptions[path.basename(filePath)]) {
-                sock.emit('statusUpdate',  projectStatus[path.basename(filePath)]);
-            }
-        } 
+
+        updateProjectSubscriptions(path.basename(filePath));
+
     });
 
     nsProcessDataProcess.on('close', (code) => {
@@ -115,24 +121,29 @@ function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
     let nsTrainProcess = exec(cmd, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing ns-train: ${error.message}`);
+            projectStatus[path.basename(filePath)] += error.message;
+
+            updateProjectSubscriptions(path.basename(filePath));
             return;
         }
         if (stderr) {
             console.error(`ns-train stderr: ${stderr}`);
+            projectStatus[path.basename(filePath)] += stderr;
+
+            updateProjectSubscriptions(path.basename(filePath));
             return;
         }
         console.log(`ns-train output: ${stdout}`);
+        projectStatus[path.basename(filePath)] += stdout;
+
+        updateProjectSubscriptions(path.basename(filePath));
     });
 
     nsTrainProcess.stdout.on('data', (data) => {
         console.log(`ns-train stdout: ${data}`);
         projectStatus[path.basename(filePath)] += data;
-        if (projectStatusSubscriptions[path.basename(filePath)]) {
-   
-            for (let sock of projectStatusSubscriptions[path.basename(filePath)]) {
-                sock.emit('statusUpdate',  projectStatus[path.basename(filePath)]);
-            }
-        } 
+
+        updateProjectSubscriptions(path.basename(filePath));
     });
 
     nsTrainProcess.on('close', (code) => {
