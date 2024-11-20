@@ -35,6 +35,7 @@ io.on("connection", (socket) => {
 });
 
 
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, 'uploads'));
@@ -48,7 +49,6 @@ const upload = multer({ storage: storage });
 
 app.post('/upload', upload.single('file'), (req, res) => {
     res.send('File uploaded successfully');
-    projectStatus[req.file.path] = { uploadStatus: "uploaded" };
     console.log('File uploaded, starting to process data w/ nerfstudio');
     processUploadedVideoFile(req.file.path);
 });
@@ -69,7 +69,6 @@ function processUploadedVideoFile(filePath) {
 
     let cmd = `ns-process-data video --data ${filePath}`;
     cmd += ` --output-dir ${processedDir}`;
-    projectStatus[filePath]['stdout'] = "";
 
 
     let nsProcessDataProcess = exec(cmd, (error, stdout, stderr) => {
