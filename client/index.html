@@ -24,8 +24,16 @@
     </form>
     <hr />
     <h2>Status:</h2>
-    <a id="viewer-link" target="_blank" rel="noreferrer">View the Gaussian Splat Live</a>
-    <div id="status" style="white-space: pre-wrap;"></div>
+    <strong>Viewer Link:</strong><a id="viewer-link" target="_blank" rel="noreferrer">Not Ready...</a>
+    <br />
+    <strong>Download Link:</strong><a id="download-link" target="_blank" rel="noreferrer">Not Ready...</a>
+    
+    <hr />
+
+    <details>
+        <summary>Console Log Output</summary>
+        <div id="status" style="white-space: pre-wrap;"></div>
+    </details>
 
 
     <script>
@@ -47,6 +55,7 @@
                     const url = originalUrls[0].replace("0.0.0.0", "itp-ml-itp.tsoa.nyu.edu");
                     const link = document.getElementById('viewer-link');
                     link.href = url;
+                    link.innerText = url;
                     viserUrl = url;
                 }
             }
@@ -65,6 +74,7 @@
 
                 const statusMessage = document.getElementById('status');
                 if (response.ok) {
+                    document.getElementById('fileInput').value = '';
                     let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
                     if (!subscriptions.includes(file.name)) {
                         subscriptions.push(file.name);
