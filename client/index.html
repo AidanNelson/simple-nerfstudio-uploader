@@ -52,7 +52,7 @@
             if (!viserUrl) {
                 let originalUrls = data.match(/http:\/\/[^\s]+/);
                 if (originalUrls[0]) {
-                    const url = originalUrls[0].replace("0.0.0.0", "itp-ml-itp.tsoa.nyu.edu");
+                    const url = originalUrls[0].replace("0.0.0.0", "itp-ml.itp.tsoa.nyu.edu");
                     const link = document.getElementById('viewer-link');
                     link.href = url;
                     link.innerText = url;
