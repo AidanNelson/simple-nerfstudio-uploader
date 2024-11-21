@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 
 
@@ -82,78 +82,53 @@ function processUploadedVideoFile(filePath) {
     const outputDirPath = path.join(outputDir, 'output');
     fs.mkdirSync(outputDirPath, { recursive: true });
 
-
-    let cmd = `ns-process-data video --data ${filePath}`;
-    cmd += ` --output-dir ${processedDir}`;
-
-
-    let nsProcessDataProcess = exec(cmd, {maxBuffer: 1024 * 1024 * 8}, (error, stdout, stderr) => {
-        if (error) {
-            projectStatus[path.basename(filePath)] += error.message;
-            console.error(`Error executing ns-process-data: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            projectStatus[path.basename(filePath)] += stderr;
-
-            console.error(`ns-process-data stderr: ${stderr}`);
-            return;
-        }
-        
-        projectStatus[path.basename(filePath)] += stdout;
-        updateProjectSubscriptions(path.basename(filePath));
-
-        console.log(`ns-process-data output: ${stdout}`);
-    });
+    let nsProcessDataProcess = spawn('ns-process-data', ['video', '--data', filePath, '--output-dir', processedDir]);
 
     nsProcessDataProcess.stdout.on('data', (data) => {
         console.log(`ns-process-data stdout: ${data}`);
-        projectStatus[path.basename(filePath)] += data;
-
+        projectStatus[path.basename(filePath)] += data.toString();
         updateProjectSubscriptions(path.basename(filePath));
+    });
 
+    nsProcessDataProcess.stderr.on('data', (data) => {
+        console.error(`ns-process-data stderr: ${data}`);
+        projectStatus[path.basename(filePath)] += data.toString();
+        updateProjectSubscriptions(path.basename(filePath));
     });
 
     nsProcessDataProcess.on('close', (code) => {
         console.log(`ns-process-data process exited with code ${code}`);
-        trainSplatfactoModel(filePath, processedDir, outputDir);
-    })
+        if (code === 0) {
+            trainSplatfactoModel(filePath, processedDir, outputDirPath);
+        } else {
+            projectStatus[path.basename(filePath)] += `ns-process-data process exited with code ${code}`;
+            updateProjectSubscriptions(path.basename(filePath));
+        }
+    });
 }
 
 function trainSplatfactoModel(filePath, processedDir, outputDirPath) {
 
-    let cmd = `ns-train splatfacto --data ${processedDir}`;
-    cmd += ` --output-dir ${outputDirPath}`;
-
-    let nsTrainProcess = exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing ns-train: ${error.message}`);
-            projectStatus[path.basename(filePath)] += error.message;
-
-            return;
-        }
-        if (stderr) {
-            console.error(`ns-train stderr: ${stderr}`);
-            projectStatus[path.basename(filePath)] += stderr;
-
-            return;
-        }
-        console.log(`ns-train output: ${stdout}`);
-        projectStatus[path.basename(filePath)] += stdout;
-
-        updateProjectSubscriptions(path.basename(filePath));
-    });
+    let nsTrainProcess = spawn('ns-train', ['splatfacto', '--data', processedDir, '--output-dir', outputDirPath]);
 
     nsTrainProcess.stdout.on('data', (data) => {
         console.log(`ns-train stdout: ${data}`);
-        projectStatus[path.basename(filePath)] += data;
+        projectStatus[path.basename(filePath)] += data.toString();
+        updateProjectSubscriptions(path.basename(filePath));
+    });
 
+    nsTrainProcess.stderr.on('data', (data) => {
+        console.error(`ns-train stderr: ${data}`);
+        projectStatus[path.basename(filePath)] += data.toString();
         updateProjectSubscriptions(path.basename(filePath));
     });
 
     nsTrainProcess.on('close', (code) => {
         console.log(`ns-train process exited with code ${code}`);
-
+        if (code !== 0) {
+            projectStatus[path.basename(filePath)] += `ns-train process exited with code ${code}`;
+        }
+        updateProjectSubscriptions(path.basename(filePath));
     });
 }
 
